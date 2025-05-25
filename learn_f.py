@@ -7,20 +7,20 @@ import os
 
 # --- Load Data ---
 parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z/'
-Hz_all = np.load(parent_dir + "Hz_all.npy")         # shape (30000, 50)
-pk_all = np.load(parent_dir + "pk_nl_all.npy")      # shape (30000, 50, 262)
-z_grid = np.load(parent_dir + "z.npy")              # shape (50,)
+Hz_all = np.load(parent_dir + "Hz_all.npy")         # shape (30000, 100)
+pk_all = np.load(parent_dir + "pk_nl_all.npy")      # shape (30000, 100, 262)
+z_grid = np.load(parent_dir + "z.npy")              # shape (100,)
 
 # --- Compute Derivatives via Finite Differences ---
-dz = jnp.diff(z_grid)                          # shape (49,)
-pk_diff = pk_all[:, 1:, :] - pk_all[:, :-1, :] # shape (30000, 49, 262)
+dz = jnp.diff(z_grid)                          # shape (99,)
+pk_diff = pk_all[:, 1:, :] - pk_all[:, :-1, :] # shape (30000, 99, 262)
 dpdz = pk_diff / dz[None, :, None]             # shape (30000, 49, 262)
 
 # --- Prepare Inputs ---
-P_input = pk_all[:, :-1, :]                    # shape (30000, 49, 262)
-H_input = Hz_all[:, :-1]                       # shape (30000, 49)
-z_input = z_grid[:-1]                          # shape (49,)
-z_input = jnp.broadcast_to(z_input[None, :], H_input.shape)  # shape (30000, 49)
+P_input = pk_all[:, :-1, :]                    # shape (30000, 99, 262)
+H_input = Hz_all[:, :-1]                       # shape (30000, 99)
+z_input = z_grid[:-1]                          # shape (99,)
+z_input = jnp.broadcast_to(z_input[None, :], H_input.shape)  # shape (30000, 99)
 
 # --- Flatten for training ---
 N = P_input.shape[0] * P_input.shape[1]
