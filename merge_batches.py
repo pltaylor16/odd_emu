@@ -3,7 +3,7 @@ import numpy as np
 from glob import glob
 
 # --- Set base directory containing all batch run subdirectories ---
-base_dir = "/srv/scratch2/taylor.4264/odd_emu/batched_high_res"
+base_dir = "/srv/scratch2/taylor.4264/odd_emu/batched_low_z"
 run_dirs = sorted([d for d in glob(os.path.join(base_dir, "run_*")) if os.path.isdir(d)])
 
 all_params = []
