@@ -1,3 +1,6 @@
+import os
+os.environ["JAX_PLATFORM_NAME"] = "cpu"
+
 from mpi4py import MPI
 from cosmopower_jax.cosmopower_jax import CosmoPowerJAX as CPJ
 import euclidemu2 as ee2
