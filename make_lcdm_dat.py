@@ -40,7 +40,7 @@ save_dir = sys.argv[1]
 os.makedirs(save_dir, exist_ok=True)
 os.makedirs(save_dir, exist_ok=True)
 
-redshifts = np.linspace(0., 5, 50)
+redshifts = np.linspace(0., 5, 500)
 
 # --- Prior ranges ---
 prior_bounds = {
