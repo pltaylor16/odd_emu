@@ -14,7 +14,7 @@ z_grid = np.load(parent_dir + "z.npy")              # shape (100,)
 # --- Compute Derivatives via Finite Differences ---
 dz = jnp.diff(z_grid)                          # shape (99,)
 pk_diff = pk_all[:, 1:, :] - pk_all[:, :-1, :] # shape (30000, 99, 262)
-dpdz = pk_diff / dz[None, :, None]             # shape (30000, 49, 262)
+dpdz = pk_diff / dz[None, :, None]             # shape (30000, 99, 262)
 
 # --- Prepare Inputs ---
 P_input = pk_all[:, :-1, :]                    # shape (30000, 99, 262)
@@ -76,14 +76,37 @@ best_model_params = None
 patience = 20
 wait = 0
 max_epochs = 1000
+batch_size = 8192
+num_batches = split_idx // batch_size
+rng = jax.random.PRNGKey(42)
 
-# --- Training Loop with Early Stopping ---
+# --- Training Loop with Minibatching and Early Stopping ---
 for epoch in range(max_epochs):
-    model_params, opt_state, train_loss = step(model_params, model, opt_state, X_P_train, X_H_train, X_z_train, y_train)
+    # Shuffle training data
+    perm = jax.random.permutation(rng, split_idx)
+    X_P_train = X_P_train[perm]
+    X_H_train = X_H_train[perm]
+    X_z_train = X_z_train[perm]
+    y_train = y_train[perm]
+
+    epoch_loss = 0.0
+    for i in range(num_batches):
+        start = i * batch_size
+        end = start + batch_size
+
+        X_P_batch = X_P_train[start:end]
+        X_H_batch = X_H_train[start:end]
+        X_z_batch = X_z_train[start:end]
+        y_batch = y_train[start:end]
+
+        model_params, opt_state, batch_loss = step(model_params, model, opt_state, X_P_batch, X_H_batch, X_z_batch, y_batch)
+        epoch_loss += batch_loss
+
+    epoch_loss /= num_batches
     val_loss, _ = loss_fn(model_params, model, X_P_val, X_H_val, X_z_val, y_val)
 
     if epoch % 10 == 0:
-        print(f"Epoch {epoch}: Train Loss = {train_loss:.6e}, Val Loss = {val_loss:.6e}")
+        print(f"Epoch {epoch}: Train Loss = {epoch_loss:.6e}, Val Loss = {val_loss:.6e}")
 
     if val_loss < best_val_loss - 1e-6:
         best_val_loss = val_loss
