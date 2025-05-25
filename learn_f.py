@@ -6,7 +6,7 @@ import optax
 import os
 
 # --- Load Data ---
-parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z/'
+parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z_big/'
 Hz_all = np.load(parent_dir + "Hz_all.npy")         # shape (30000, 100)
 pk_all = np.load(parent_dir + "pk_nl_all.npy")      # shape (30000, 100, 262)
 z_grid = np.load(parent_dir + "z.npy")              # shape (100,)
