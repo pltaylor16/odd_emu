@@ -98,6 +98,6 @@ for epoch in range(max_epochs):
 # --- Save best model ---
 save_path = "/srv/scratch2/taylor.4264/odd_emu/models"
 os.makedirs(save_path, exist_ok=True)
-model_file = os.path.join(save_path, "learned_model.eqx")
+model_file = os.path.join(save_path, "learned_model_2.eqx")
 eqx.tree_serialise_leaves(model_file, best_model_params)
 print(f"Best model saved to {model_file}")
