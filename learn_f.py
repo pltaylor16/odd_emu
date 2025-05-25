@@ -6,7 +6,7 @@ import optax
 import os
 
 # --- Load Data ---
-parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched/'
+parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z/'
 Hz_all = np.load(parent_dir + "Hz_all.npy")         # shape (30000, 50)
 pk_all = np.load(parent_dir + "pk_nl_all.npy")      # shape (30000, 50, 262)
 z_grid = np.load(parent_dir + "z.npy")              # shape (50,)
@@ -98,6 +98,6 @@ for epoch in range(max_epochs):
 # --- Save best model ---
 save_path = "/srv/scratch2/taylor.4264/odd_emu/models"
 os.makedirs(save_path, exist_ok=True)
-model_file = os.path.join(save_path, "learned_model_2.eqx")
+model_file = os.path.join(save_path, "learned_model_low_z.eqx")
 eqx.tree_serialise_leaves(model_file, best_model_params)
 print(f"Best model saved to {model_file}")
