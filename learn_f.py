@@ -9,12 +9,12 @@ import os
 parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z_big/'
 
 # Load original arrays (float64 by default) and convert to float32
-Hz_all_32 = np.load(os.path.join(parent_dir, "Hz_all.npy")).astype(np.float32)
-pk_all_32 = np.load(os.path.join(parent_dir, "pk_nl_all.npy")).astype(np.float32)
+Hz_all = np.load(os.path.join(parent_dir, "Hz_all.npy")).astype(np.float32)
+pk_all = np.load(os.path.join(parent_dir, "pk_nl_all.npy")).astype(np.float32)
 
 # Overwrite original files (or change names if you want to preserve the originals)
-np.save(os.path.join(parent_dir, "Hz_all_32.npy"), Hz_all_32)
-np.save(os.path.join(parent_dir, "pk_nl_all_32.npy"), pk_all_32)
+np.save(os.path.join(parent_dir, "Hz_all_32.npy"), Hz_all)
+np.save(os.path.join(parent_dir, "pk_nl_all_32.npy"), pk_all)
 
 print("Files successfully converted to float32 and saved.")
 
