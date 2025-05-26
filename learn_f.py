@@ -6,9 +6,9 @@ import optax
 import os
 
 # --- Load Data ---
-parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z_big/'
-Hz_all = jnp.load(parent_dir + "Hz_all_32.npy")[:100000,:]         # shape (30000, 100)
-pk_all = jnp.load(parent_dir + "pk_nl_all_32.npy")[:100000,:,:]       # shape (30000, 100, 262)
+parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z/'
+Hz_all = jnp.load(parent_dir + "Hz_all.npy")         # shape (30000, 100)
+pk_all = jnp.load(parent_dir + "pk_nl_all.npy")       # shape (30000, 100, 262)
 z_grid = jnp.load(parent_dir + "z.npy")              # shape (100,)
 
 # --- Compute Derivatives via Finite Differences (on CPU using NumPy) ---
@@ -82,7 +82,7 @@ best_model_params = None
 patience = 20
 wait = 0
 max_epochs = 1000
-batch_size = 8000
+batch_size = 15000
 num_batches = split_idx // batch_size
 rng = jax.random.PRNGKey(42)
 
@@ -127,6 +127,7 @@ for epoch in range(max_epochs):
 # --- Save best model ---
 save_path = "/srv/scratch2/taylor.4264/odd_emu/models"
 os.makedirs(save_path, exist_ok=True)
-model_file = os.path.join(save_path, "learned_model_low_z_big.eqx")
+model_file = os.path.join(save_path, "learned_model_low_z.eqx")
 eqx.tree_serialise_leaves(model_file, best_model_params)
 print(f"Best model saved to {model_file}")
+
