@@ -11,16 +11,16 @@ Hz_all = np.load(parent_dir + "Hz_all.npy")         # shape (30000, 100)
 pk_all = np.load(parent_dir + "pk_nl_all.npy")      # shape (30000, 100, 262)
 z_grid = np.load(parent_dir + "z.npy")              # shape (100,)
 
-# --- Compute Derivatives via Finite Differences ---
-dz = jnp.diff(z_grid)                          # shape (99,)
-pk_diff = pk_all[:, 1:, :] - pk_all[:, :-1, :] # shape (30000, 99, 262)
-dpdz = pk_diff / dz[None, :, None]             # shape (30000, 99, 262)
+# --- Compute Derivatives via Finite Differences (on CPU using NumPy) ---
+dz = np.diff(z_grid)                                # shape (99,)
+pk_diff = pk_all[:, 1:, :] - pk_all[:, :-1, :]      # shape (30000, 99, 262)
+dpdz = pk_diff / dz[None, :, None]                  # shape (30000, 99, 262)
 
 # --- Prepare Inputs ---
-P_input = pk_all[:, :-1, :]                    # shape (30000, 99, 262)
-H_input = Hz_all[:, :-1]                       # shape (30000, 99)
-z_input = z_grid[:-1]                          # shape (99,)
-z_input = jnp.broadcast_to(z_input[None, :], H_input.shape)  # shape (30000, 99)
+P_input = pk_all[:, :-1, :]                         # shape (30000, 99, 262)
+H_input = Hz_all[:, :-1]                            # shape (30000, 99)
+z_input = z_grid[:-1]                               # shape (99,)
+z_input = np.broadcast_to(z_input[None, :], H_input.shape)  # shape (30000, 99)
 
 # --- Flatten for training ---
 N = P_input.shape[0] * P_input.shape[1]
@@ -28,6 +28,12 @@ X_P = P_input.reshape(N, 262)
 X_H = H_input.reshape(N, 1)
 X_z = z_input.reshape(N, 1)
 y = dpdz.reshape(N, 262)
+
+# --- Convert to JAX arrays (after preprocessing on CPU) ---
+X_P = jnp.array(X_P)
+X_H = jnp.array(X_H)
+X_z = jnp.array(X_z)
+y = jnp.array(y)
 
 # --- Train/Val Split ---
 split_idx = int(0.9 * N)
@@ -117,7 +123,6 @@ for epoch in range(max_epochs):
         if wait >= patience:
             print(f"Early stopping at epoch {epoch}. Best Val Loss = {best_val_loss:.6e}")
             break
-
 
 # --- Save best model ---
 save_path = "/srv/scratch2/taylor.4264/odd_emu/models"
