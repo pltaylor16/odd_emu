@@ -7,21 +7,12 @@ import os
 
 # --- Load Data ---
 parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z_big/'
-
-# Load original arrays (float64 by default) and convert to float32
-Hz_all = np.load(os.path.join(parent_dir, "Hz_all_32.npy"))
-pk_all = np.load(os.path.join(parent_dir, "pk_nl_all_32.npy"))
-
-# Overwrite original files (or change names if you want to preserve the originals)
-#np.save(os.path.join(parent_dir, "Hz_all_32.npy"), Hz_all)
-#np.save(os.path.join(parent_dir, "pk_nl_all_32.npy"), pk_all)
-
-print("Files successfully loaded.")
-
-z_grid = np.load(parent_dir + "z.npy").astype(np.float32)   
+Hz_all = jnp.load(parent_dir + "Hz_all_32.npy")         # shape (30000, 100)
+pk_all = jnp.load(parent_dir + "pk_nl_all_32.npy")      # shape (30000, 100, 262)
+z_grid = jnp.load(parent_dir + "z.npy")              # shape (100,)
 
 # --- Compute Derivatives via Finite Differences (on CPU using NumPy) ---
-dz = np.diff(z_grid)                                # shape (99,)
+dz = jnp.diff(z_grid)                                # shape (99,)
 pk_diff = pk_all[:, 1:, :] - pk_all[:, :-1, :]      # shape (30000, 99, 262)
 dpdz = pk_diff / dz[None, :, None]                  # shape (30000, 99, 262)
 
