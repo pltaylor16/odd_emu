@@ -76,7 +76,7 @@ best_model_params = None
 patience = 20
 wait = 0
 max_epochs = 1000
-batch_size = 8192
+batch_size = 8000
 num_batches = split_idx // batch_size
 rng = jax.random.PRNGKey(42)
 
@@ -105,7 +105,7 @@ for epoch in range(max_epochs):
     epoch_loss /= num_batches
     val_loss, _ = loss_fn(model_params, model, X_P_val, X_H_val, X_z_val, y_val)
 
-    if epoch % 10 == 0:
+    if epoch % 1 == 0:
         print(f"Epoch {epoch}: Train Loss = {epoch_loss:.6e}, Val Loss = {val_loss:.6e}")
 
     if val_loss < best_val_loss - 1e-6:
@@ -118,9 +118,10 @@ for epoch in range(max_epochs):
             print(f"Early stopping at epoch {epoch}. Best Val Loss = {best_val_loss:.6e}")
             break
 
+
 # --- Save best model ---
 save_path = "/srv/scratch2/taylor.4264/odd_emu/models"
 os.makedirs(save_path, exist_ok=True)
-model_file = os.path.join(save_path, "learned_model_low_z.eqx")
+model_file = os.path.join(save_path, "learned_model_low_z_big.eqx")
 eqx.tree_serialise_leaves(model_file, best_model_params)
 print(f"Best model saved to {model_file}")
