@@ -7,8 +7,8 @@ import os
 
 # --- Load Data ---
 parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z_big/'
-Hz_all = jnp.load(parent_dir + "Hz_all_32.npy")         # shape (30000, 100)
-pk_all = jnp.load(parent_dir + "pk_nl_all_32.npy")      # shape (30000, 100, 262)
+Hz_all = jnp.load(parent_dir + "Hz_all_32.npy")[:100000,:]         # shape (30000, 100)
+pk_all = jnp.load(parent_dir + "pk_nl_all_32.npy")[:100000,:,:]       # shape (30000, 100, 262)
 z_grid = jnp.load(parent_dir + "z.npy")              # shape (100,)
 
 # --- Compute Derivatives via Finite Differences (on CPU using NumPy) ---
