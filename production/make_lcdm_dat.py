@@ -64,7 +64,7 @@ def compute_Hz(cosmo_par, z_array):
     return H0 * np.sqrt(Ez_sq)
 
 # --- Total sample count per rank ---
-n_total_samples = 80
+n_total_samples = 60
 samples_per_rank = n_total_samples // size + (rank < n_total_samples % size)
 start_idx = rank * (n_total_samples // size) + min(rank, n_total_samples % size)
 
