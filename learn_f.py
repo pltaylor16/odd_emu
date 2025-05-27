@@ -1,9 +1,12 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Use GPU 2 only
+
 import jax
 import jax.numpy as jnp
 import numpy as np
 import equinox as eqx
 import optax
-import os
+
 
 # --- Load Data ---
 parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z/'
@@ -13,11 +16,12 @@ z_grid = jnp.load(parent_dir + "z.npy")
 
 # --- Derivatives ---
 dz = jnp.diff(z_grid)
-pk_diff = pk_all[:, 1:, :] - pk_all[:, :-1, :]
-dpdz = pk_diff / dz[None, :, None]
+pk_log = jnp.log1p(pk_all)
+pk_diff = pk_log[:, 1:, :] - pk_log[:, :-1, :]
+dlogpk_dz = pk_diff / dz[None, :, None]
 
 # --- Prepare Inputs ---
-P_input = pk_all[:, :-1, :]
+P_input = pk_log[:, :-1, :]
 H_input = Hz_all[:, :-1]
 z_input = np.broadcast_to(z_grid[:-1][None, :], H_input.shape)
 
@@ -25,7 +29,7 @@ N = P_input.shape[0] * P_input.shape[1]
 X_P = P_input.reshape(N, 262)
 X_H = H_input.reshape(N, 1)
 X_z = z_input.reshape(N, 1)
-y = dpdz.reshape(N, 262)
+y = dlogpk_dz.reshape(N, 262)
 
 X_P = jnp.array(X_P)
 X_H = jnp.array(X_H)
@@ -63,12 +67,11 @@ def step(model_params, model, opt_state, X_P, X_H, X_z, y):
     model_params = optax.apply_updates(model_params, updates)
     return model_params, opt_state, loss
 
-# --- Train 20 Models ---
 save_path = "/srv/scratch2/taylor.4264/odd_emu/models"
 os.makedirs(save_path, exist_ok=True)
 
-for run_idx in range(200):
-    key = jax.random.PRNGKey(run_idx)
+for run_idx in range(5):
+    key = jax.random.PRNGKey(run_idx + 5)
     model = RHS(key)
     model_params = eqx.filter(model, eqx.is_inexact_array)
     opt = optax.adam(1e-3)
@@ -117,6 +120,6 @@ for run_idx in range(200):
                 print(f"Early stopping run {run_idx} at epoch {epoch}. Best Val Loss = {best_val_loss:.6e}")
                 break
 
-    model_file = os.path.join(save_path, f"learned_model_low_z_c_{run_idx}.eqx")
+    model_file = os.path.join(save_path, f"learned_model_low_z_log_{run_idx + 5}.eqx")
     eqx.tree_serialise_leaves(model_file, best_model_params)
     print(f"Run {run_idx}: Saved best model to {model_file}")
