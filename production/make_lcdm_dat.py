@@ -16,27 +16,21 @@ size = comm.Get_size()
 save_dir = sys.argv[1]
 os.makedirs(save_dir, exist_ok=True)
 
+# --- Construct redshift array list ---
 redshift_list = []
 
-# 20 chunks from 0 to 1
 z_edges_1 = np.linspace(0.0, 1.0, 21, dtype=np.float32)
 for i in range(20):
-    z_array = np.linspace(z_edges_1[i], z_edges_1[i + 1], 100, dtype=np.float32)
-    redshift_list.append(z_array)
+    redshift_list.append(np.linspace(z_edges_1[i], z_edges_1[i + 1], 100, dtype=np.float32))
 
-# 10 chunks from 1 to 2
 z_edges_2 = np.linspace(1.0, 2.0, 11, dtype=np.float32)
 for i in range(10):
-    z_array = np.linspace(z_edges_2[i], z_edges_2[i + 1], 100, dtype=np.float32)
-    redshift_list.append(z_array)
+    redshift_list.append(np.linspace(z_edges_2[i], z_edges_2[i + 1], 100, dtype=np.float32))
 
-# 32 chunks from 2 to 10
 z_edges_3 = np.linspace(2.0, 10.0, 33, dtype=np.float32)
 for i in range(32):
-    z_array = np.linspace(z_edges_3[i], z_edges_3[i + 1], 100, dtype=np.float32)
-    redshift_list.append(z_array)
+    redshift_list.append(np.linspace(z_edges_3[i], z_edges_3[i + 1], 100, dtype=np.float32))
 
-# Total: 62 arrays
 print(f"Constructed {len(redshift_list)} redshift arrays.")
 
 # --- Prior ranges ---
@@ -74,7 +68,17 @@ n_total_samples = 300
 samples_per_rank = n_total_samples // size + (rank < n_total_samples % size)
 start_idx = rank * (n_total_samples // size) + min(rank, n_total_samples % size)
 
-# --- Main loop over redshift lists ---
+# --- Generate shared cosmology samples for this rank ---
+cosmo_params_list = []
+for _ in range(samples_per_rank):
+    As  = np.random.uniform(*prior_bounds['As'])
+    ns  = np.random.uniform(*prior_bounds['ns'])
+    Omb = np.random.uniform(*prior_bounds['Omb'])
+    Omm = np.random.uniform(*prior_bounds['Omm'])
+    h   = np.random.uniform(*prior_bounds['h'])
+    cosmo_params_list.append((As, ns, Omb, Omm, h))
+
+# --- Loop over redshift sets using shared cosmologies ---
 for z_idx, redshifts in enumerate(redshift_list):
     n_z = len(redshifts)
     n_k = len(k)
@@ -83,14 +87,8 @@ for z_idx, redshifts in enumerate(redshift_list):
     pk_nl_array = np.zeros((samples_per_rank, n_z, n_k), dtype=np.float32)
     Hz_array    = np.zeros((samples_per_rank, n_z), dtype=np.float32)
 
-    for i in range(samples_per_rank):
+    for i, (As, ns, Omb, Omm, h) in enumerate(cosmo_params_list):
         try:
-            As  = np.random.uniform(*prior_bounds['As'])
-            ns  = np.random.uniform(*prior_bounds['ns'])
-            Omb = np.random.uniform(*prior_bounds['Omb'])
-            Omm = np.random.uniform(*prior_bounds['Omm'])
-            h   = np.random.uniform(*prior_bounds['h'])
-
             omega_b   = Omb * h**2
             omega_cdm = (Omm - Omb) * h**2
             ln_10_A_s = np.log(1e10 * As)
@@ -98,22 +96,16 @@ for z_idx, redshifts in enumerate(redshift_list):
             param_array[i] = [As, ns, Omb, Omm, h]
 
             cosmo_par = {
-                'As': As,
-                'ns': ns,
-                'Omb': Omb,
-                'Omm': Omm,
-                'h': h,
-                'mnu': 0.0,
-                'w': -1.0,
-                'wa': 0.0,
+                'As': As, 'ns': ns, 'Omb': Omb, 'Omm': Omm, 'h': h,
+                'mnu': 0.0, 'w': -1.0, 'wa': 0.0,
             }
 
             Hz_array[i] = compute_Hz(cosmo_par, redshifts).astype(np.float32)
 
             pk_lin_2d = []
             for z in redshifts:
-                cosmo_params = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, z], dtype=np.float32)
-                pk_full = emulator.predict(cosmo_params)
+                cosmo_inputs = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, z], dtype=np.float32)
+                pk_full = emulator.predict(cosmo_inputs)
                 pk_lin_2d.append(pk_full[k_idx])
             pk_lin_2d = np.stack(pk_lin_2d, axis=0).astype(np.float32)
 
@@ -127,7 +119,6 @@ for z_idx, redshifts in enumerate(redshift_list):
         except Exception as e:
             print(f"[Rank {rank}] Sample {i+1} failed for z set {z_idx}: {e}")
 
-    # --- Save float32 arrays ---
     np.save(os.path.join(save_dir, f"params_rank{rank}_z{z_idx}.npy"), param_array)
     np.save(os.path.join(save_dir, f"pk_nl_rank{rank}_z{z_idx}.npy"), pk_nl_array)
     np.save(os.path.join(save_dir, f"Hz_rank{rank}_z{z_idx}.npy"), Hz_array)
