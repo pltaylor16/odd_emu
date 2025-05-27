@@ -9,7 +9,7 @@ import optax
 
 
 # --- Load Data ---
-parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z/'
+parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched/'
 Hz_all = jnp.load(parent_dir + "Hz_all.npy")
 pk_all = jnp.load(parent_dir + "pk_nl_all.npy")
 z_grid = jnp.load(parent_dir + "z.npy")
@@ -70,7 +70,7 @@ def step(model_params, model, opt_state, X_P, X_H, X_z, y):
 save_path = "/srv/scratch2/taylor.4264/odd_emu/models"
 os.makedirs(save_path, exist_ok=True)
 
-for run_idx in range(5):
+for run_idx in range(1):
     key = jax.random.PRNGKey(run_idx + 5)
     model = RHS(key)
     model_params = eqx.filter(model, eqx.is_inexact_array)
@@ -120,6 +120,6 @@ for run_idx in range(5):
                 print(f"Early stopping run {run_idx} at epoch {epoch}. Best Val Loss = {best_val_loss:.6e}")
                 break
 
-    model_file = os.path.join(save_path, f"learned_model_low_z_log_{run_idx + 5}.eqx")
+    model_file = os.path.join(save_path, f"learned_model_log_{run_idx}.eqx")
     eqx.tree_serialise_leaves(model_file, best_model_params)
     print(f"Run {run_idx}: Saved best model to {model_file}")
