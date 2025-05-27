@@ -119,9 +119,9 @@ for z_idx, redshifts in enumerate(redshift_list):
         except Exception as e:
             print(f"[Rank {rank}] Sample {i+1} failed for z set {z_idx}: {e}")
 
-    np.save(os.path.join(save_dir, f"params_rank{rank}_z{z_idx}.npy"), param_array)
-    np.save(os.path.join(save_dir, f"pk_nl_rank{rank}_z{z_idx}.npy"), pk_nl_array)
-    np.save(os.path.join(save_dir, f"Hz_rank{rank}_z{z_idx}.npy"), Hz_array)
+        np.save(os.path.join(save_dir, f"params_rank{rank}_z{z_idx}.npy"), param_array)
+        np.save(os.path.join(save_dir, f"pk_nl_rank{rank}_z{z_idx}.npy"), pk_nl_array)
+        np.save(os.path.join(save_dir, f"Hz_rank{rank}_z{z_idx}.npy"), Hz_array)
 
     if rank == 0:
         np.save(os.path.join(save_dir, f"k_z{z_idx}.npy"), k)
