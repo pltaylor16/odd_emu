@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-n_jobs = 100
+n_jobs = 400
 n_procs_per_job = 40  # match to your `mpirun -n` usage
 base_output_dir = "/srv/scratch2/taylor.4264/odd_emu/production_run"
 
