@@ -9,9 +9,9 @@ import optax
 
 
 # --- Load Data ---
-parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched/'
-Hz_all = jnp.load(parent_dir + "Hz_all.npy")
-pk_all = jnp.load(parent_dir + "pk_nl_all.npy")
+parent_dir = '/srv/scratch2/taylor.4264/odd_emu/batched_low_z/'
+Hz_all = jnp.load(parent_dir + "Hz_all_reduced.npy")
+pk_all = jnp.load(parent_dir + "pk_nl_all_reduced.npy")
 z_grid = jnp.load(parent_dir + "z.npy")
 
 # --- Derivatives ---
@@ -120,6 +120,6 @@ for run_idx in range(1):
                 print(f"Early stopping run {run_idx} at epoch {epoch}. Best Val Loss = {best_val_loss:.6e}")
                 break
 
-    model_file = os.path.join(save_path, f"learned_model_log_{run_idx}.eqx")
+    model_file = os.path.join(save_path, f"learned_model_log_less_dat_{run_idx}.eqx")
     eqx.tree_serialise_leaves(model_file, best_model_params)
     print(f"Run {run_idx}: Saved best model to {model_file}")
