@@ -16,10 +16,6 @@ save_path = "/srv/scratch2/taylor.4264/odd_emu/production_models"
 parent_dir = "/srv/scratch2/taylor.4264/odd_emu/production_run/merged/"
 os.makedirs(save_path, exist_ok=True)
 
-# --- Constants ---
-H_norm = 100.0  # for normalization
-rho_unit = 2.775e11  # (h^2 M_sun / Mpc^3), used for rho_m(z) in cosmology
-
 # --- Model definition ---
 class RHS(eqx.Module):
     mlp: eqx.nn.MLP
@@ -52,9 +48,18 @@ pk_all = jnp.load(parent_dir + f"pk_nl_{z_idx}.npy").astype(jnp.float32)
 z_grid = jnp.load(parent_dir + f"z_{z_idx}.npy")
 rho_m_all = jnp.load(parent_dir + f"rho_m_{z_idx}.npy").astype(jnp.float32)  # kg/m^3
 
-# --- Normalize inputs ---
-Hz_all = Hz_all / H_norm
-rho_m_all = rho_m_all / rho_m_all.mean()
+# --- Normalize H(z) ---
+H_flat = Hz_all.reshape(-1)
+H_mean = jnp.mean(H_flat)
+H_std = jnp.std(H_flat)
+Hz_all = (Hz_all - H_mean) / H_std
+
+# --- Normalize rho_m(z) ---
+rho_flat = rho_m_all.reshape(-1)
+log_rho_flat = jnp.log10(rho_flat + 1e-30)
+log_rho_mean = jnp.mean(log_rho_flat)
+log_rho_std = jnp.std(log_rho_flat)
+log_rho_all = (jnp.log10(rho_m_all + 1e-30) - log_rho_mean) / log_rho_std
 
 # --- Compute derivatives ---
 dz = jnp.diff(z_grid)
@@ -65,7 +70,7 @@ dlogpk_dz = pk_diff / dz[None, :, None]
 # --- Prepare input data ---
 P_input = pk_log[:, :-1, :]
 H_input = Hz_all[:, :-1]
-rho_input = rho_m_all[:, :-1]
+rho_input = log_rho_all[:, :-1]
 z_input = jnp.broadcast_to(z_grid[:-1][None, :], H_input.shape)
 
 N = P_input.shape[0] * P_input.shape[1]
@@ -75,6 +80,7 @@ X_rho = rho_input.reshape(N, 1)
 X_z = z_input.reshape(N, 1)
 y = dlogpk_dz.reshape(N, 262)
 
+# --- Split data ---
 split_idx = int(0.9 * N)
 X_P_train, X_P_val = X_P[:split_idx], X_P[split_idx:]
 X_H_train, X_H_val = X_H[:split_idx], X_H[split_idx:]
