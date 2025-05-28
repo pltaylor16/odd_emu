@@ -4,7 +4,7 @@ import time
 n_chunks = 62  # Total number of redshift chunks
 script_path = "learn_f.py"
 
-for z_idx in range(0, n_chunks, 2):
+for z_idx in range(40, n_chunks, 2):
     processes = []
 
     # Launch even chunk on GPU 0
