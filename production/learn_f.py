@@ -16,28 +16,32 @@ save_path = "/srv/scratch2/taylor.4264/odd_emu/production_models"
 parent_dir = "/srv/scratch2/taylor.4264/odd_emu/production_run/merged/"
 os.makedirs(save_path, exist_ok=True)
 
+# --- Constants ---
+H_norm = 100.0  # for normalization
+rho_unit = 2.775e11  # (h^2 M_sun / Mpc^3), used for rho_m(z) in cosmology
+
 # --- Model definition ---
 class RHS(eqx.Module):
     mlp: eqx.nn.MLP
     def __init__(self, key):
-        self.mlp = eqx.nn.MLP(in_size=264, out_size=262, width_size=512, depth=4, key=key)
+        self.mlp = eqx.nn.MLP(in_size=265, out_size=262, width_size=512, depth=4, key=key)
 
-    def __call__(self, P, H, z):
-        x = jnp.concatenate([P, H, z])
+    def __call__(self, P, H, rho, z):
+        x = jnp.concatenate([P, H, rho, z])
         return self.mlp(x)
 
 @eqx.filter_value_and_grad
-def loss_fn(model_params, model, X_P, X_H, X_z, y):
+def loss_fn(model_params, model, X_P, X_H, X_rho, X_z, y):
     model = eqx.combine(model_params, model)
-    def single_example(p, h, z, y_true):
-        y_pred = model(p, h, z)
+    def single_example(p, h, r, z, y_true):
+        y_pred = model(p, h, r, z)
         return jnp.mean((y_pred - y_true) ** 2)
-    losses = jax.vmap(single_example)(X_P, X_H, X_z, y)
+    losses = jax.vmap(single_example)(X_P, X_H, X_rho, X_z, y)
     return jnp.mean(losses)
 
 @eqx.filter_jit
-def step(model_params, model, opt_state, X_P, X_H, X_z, y):
-    loss, grads = loss_fn(model_params, model, X_P, X_H, X_z, y)
+def step(model_params, model, opt_state, X_P, X_H, X_rho, X_z, y):
+    loss, grads = loss_fn(model_params, model, X_P, X_H, X_rho, X_z, y)
     updates, opt_state = opt.update(grads, opt_state)
     model_params = optax.apply_updates(model_params, updates)
     return model_params, opt_state, loss
@@ -46,6 +50,11 @@ def step(model_params, model, opt_state, X_P, X_H, X_z, y):
 Hz_all = jnp.load(parent_dir + f"Hz_{z_idx}.npy").astype(jnp.float32)
 pk_all = jnp.load(parent_dir + f"pk_nl_{z_idx}.npy").astype(jnp.float32)
 z_grid = jnp.load(parent_dir + f"z_{z_idx}.npy")
+rho_m_all = jnp.load(parent_dir + f"rho_m_{z_idx}.npy").astype(jnp.float32)  # kg/m^3
+
+# --- Normalize inputs ---
+Hz_all = Hz_all / H_norm
+rho_m_all = rho_m_all / rho_m_all.mean()
 
 # --- Compute derivatives ---
 dz = jnp.diff(z_grid)
@@ -56,17 +65,20 @@ dlogpk_dz = pk_diff / dz[None, :, None]
 # --- Prepare input data ---
 P_input = pk_log[:, :-1, :]
 H_input = Hz_all[:, :-1]
-z_input = np.broadcast_to(z_grid[:-1][None, :], H_input.shape)
+rho_input = rho_m_all[:, :-1]
+z_input = jnp.broadcast_to(z_grid[:-1][None, :], H_input.shape)
 
 N = P_input.shape[0] * P_input.shape[1]
 X_P = P_input.reshape(N, 262)
 X_H = H_input.reshape(N, 1)
+X_rho = rho_input.reshape(N, 1)
 X_z = z_input.reshape(N, 1)
 y = dlogpk_dz.reshape(N, 262)
 
 split_idx = int(0.9 * N)
 X_P_train, X_P_val = X_P[:split_idx], X_P[split_idx:]
 X_H_train, X_H_val = X_H[:split_idx], X_H[split_idx:]
+X_rho_train, X_rho_val = X_rho[:split_idx], X_rho[split_idx:]
 X_z_train, X_z_val = X_z[:split_idx], X_z[split_idx:]
 y_train, y_val = y[:split_idx], y[split_idx:]
 
@@ -90,6 +102,7 @@ for epoch in range(max_epochs):
     perm = jax.random.permutation(rng, split_idx)
     X_P_train = X_P_train[perm]
     X_H_train = X_H_train[perm]
+    X_rho_train = X_rho_train[perm]
     X_z_train = X_z_train[perm]
     y_train = y_train[perm]
 
@@ -99,15 +112,16 @@ for epoch in range(max_epochs):
         end = start + batch_size
         X_P_batch = X_P_train[start:end]
         X_H_batch = X_H_train[start:end]
+        X_rho_batch = X_rho_train[start:end]
         X_z_batch = X_z_train[start:end]
         y_batch = y_train[start:end]
         model_params, opt_state, batch_loss = step(
-            model_params, model, opt_state, X_P_batch, X_H_batch, X_z_batch, y_batch
+            model_params, model, opt_state, X_P_batch, X_H_batch, X_rho_batch, X_z_batch, y_batch
         )
         epoch_loss += batch_loss
 
     epoch_loss /= num_batches
-    val_loss, _ = loss_fn(model_params, model, X_P_val, X_H_val, X_z_val, y_val)
+    val_loss, _ = loss_fn(model_params, model, X_P_val, X_H_val, X_rho_val, X_z_val, y_val)
 
     if epoch % 10 == 0:
         print(f"[Chunk {z_idx}] Epoch {epoch}: Train Loss = {epoch_loss:.6e}, Val Loss = {val_loss:.6e}")
@@ -123,6 +137,6 @@ for epoch in range(max_epochs):
             break
 
 # --- Save model ---
-model_file = os.path.join(save_path, f"learned_model_zchunk_{z_idx:02d}.eqx")
+model_file = os.path.join(save_path, f"learned_model_rhom_zchunk_{z_idx:02d}.eqx")
 eqx.tree_serialise_leaves(model_file, best_model_params)
 print(f"[Chunk {z_idx}] Saved best model to {model_file}")
