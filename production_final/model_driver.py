@@ -1,7 +1,7 @@
 import subprocess
 import time
 
-n_chunks = 105  # Total number of redshift chunks
+n_chunks = 63  # Total number of redshift chunks
 script_path = "learn_f.py"
 
 for z_idx in range(0, n_chunks, 2):

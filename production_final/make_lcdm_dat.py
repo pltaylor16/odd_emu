@@ -27,7 +27,7 @@ z_edges_2 = np.linspace(1.0, 2.0, 21, dtype=np.float32)
 for i in range(20):
     redshift_list.append(np.linspace(z_edges_2[i], z_edges_2[i + 1], 100, dtype=np.float32))
 
-z_edges_3 = np.linspace(2.0, 3.5, 21, dtype=np.float32)
+z_edges_3 = np.linspace(2.0, 3.0, 21, dtype=np.float32)
 for i in range(20):
     redshift_list.append(np.linspace(z_edges_3[i], z_edges_3[i + 1], 100, dtype=np.float32))
 
@@ -45,7 +45,7 @@ prior_bounds = {
 # --- Emulator setup ---
 emulator = CPJ(probe='mpk_lin')
 k = emulator.modes.astype(np.float32)
-k_idx = np.where((k > 1e-2) & (k < 4.9))
+k_idx = np.where((k > 1e-1) & (k < 4.9))
 k = k[k_idx]
 
 # --- H(z) computation ---
