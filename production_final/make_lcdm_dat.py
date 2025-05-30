@@ -24,11 +24,11 @@ for i in range(20):
     redshift_list.append(np.linspace(z_edges_1[i], z_edges_1[i + 1], 100, dtype=np.float32))
 
 z_edges_2 = np.linspace(1.0, 2.0, 21, dtype=np.float32)
-for i in range(10):
+for i in range(20):
     redshift_list.append(np.linspace(z_edges_2[i], z_edges_2[i + 1], 100, dtype=np.float32))
 
 z_edges_3 = np.linspace(2.0, 3.5, 21, dtype=np.float32)
-for i in range(32):
+for i in range(20):
     redshift_list.append(np.linspace(z_edges_3[i], z_edges_3[i + 1], 100, dtype=np.float32))
 
 print(f"Constructed {len(redshift_list)} redshift arrays.")
