@@ -22,7 +22,7 @@ k_shape = 182
 class RHS(eqx.Module):
     mlp: eqx.nn.MLP
     def __init__(self, key):
-        self.mlp = eqx.nn.MLP(in_size=265, out_size=k_shape, width_size=512, depth=4, key=key)
+        self.mlp = eqx.nn.MLP(in_size=k_shape+3, out_size=k_shape, width_size=512, depth=4, key=key)
 
     def __call__(self, P, H, rho, z):
         x = jnp.concatenate([P, H, rho, z])
