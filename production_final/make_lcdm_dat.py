@@ -19,16 +19,16 @@ os.makedirs(save_dir, exist_ok=True)
 # --- Construct redshift array list ---
 redshift_list = []
 
-z_edges_1 = np.linspace(0.0, 1.0, 21, dtype=np.float32)
-for i in range(20):
+z_edges_1 = np.linspace(0.0, 1.0, 31, dtype=np.float32)
+for i in range(30):
     redshift_list.append(np.linspace(z_edges_1[i], z_edges_1[i + 1], 100, dtype=np.float32))
 
-z_edges_2 = np.linspace(1.0, 2.0, 21, dtype=np.float32)
-for i in range(20):
+z_edges_2 = np.linspace(1.0, 2.0, 31, dtype=np.float32)
+for i in range(30):
     redshift_list.append(np.linspace(z_edges_2[i], z_edges_2[i + 1], 100, dtype=np.float32))
 
-z_edges_3 = np.linspace(2.0, 3.0, 21, dtype=np.float32)
-for i in range(20):
+z_edges_3 = np.linspace(2.0, 3.0, 31, dtype=np.float32)
+for i in range(30):
     redshift_list.append(np.linspace(z_edges_3[i], z_edges_3[i + 1], 100, dtype=np.float32))
 
 print(f"Constructed {len(redshift_list)} redshift arrays.")
@@ -44,7 +44,7 @@ prior_bounds = {
 
 # --- Emulator setup ---
 emulator = CPJ(probe='mpk_lin')
-k = emulator.modes.astype(np.float32)
+k = emulator.modes.astype(np.float32)[::4]
 k_idx = np.where((k > 1e-1) & (k < 4.9))
 k = k[k_idx]
 

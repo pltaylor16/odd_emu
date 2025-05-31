@@ -3,7 +3,7 @@ import numpy as np
 from glob import glob
 
 # --- Directories ---
-base_dir = "/srv/scratch2/taylor.4264/odd_emu/production_run_final"
+base_dir = "/srv/scratch3/taylor.4264/odd_emu/production_run_final"
 merged_dir = os.path.join(base_dir, "merged")
 os.makedirs(merged_dir, exist_ok=True)
 

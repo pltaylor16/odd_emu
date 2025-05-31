@@ -4,7 +4,7 @@ from glob import glob
 from tqdm import tqdm
 
 # --- Base input/output directory ---
-base_dir = "/srv/scratch2/taylor.4264/odd_emu/production_run_final"  # change if needed
+base_dir = "/srv/scratch3/taylor.4264/odd_emu/production_run_final"  # change if needed
 output_dir = os.path.join(base_dir, "merged")
 os.makedirs(output_dir, exist_ok=True)
 
