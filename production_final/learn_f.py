@@ -6,17 +6,19 @@ import numpy as np
 import equinox as eqx
 import optax
 
+
 # --- Parse arguments ---
 z_idx = int(sys.argv[1])
 gpu_id = sys.argv[2]
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
 
 # --- Paths ---
-save_path = "/srv/scratch2/taylor.4264/odd_emu/production_models_final"
-parent_dir = "/srv/scratch2/taylor.4264/odd_emu/production_run_final/merged/"
+save_path = "/srv/scratch3/taylor.4264/odd_emu/production_models_final"
+parent_dir = "/srv/scratch3/taylor.4264/odd_emu/production_run_final/merged/"
 os.makedirs(save_path, exist_ok=True)
 
-k_shape = 182
+k = np.load(parent_dir + 'k_0.npy')
+k_shape = np.shape(k)[0]
 
 # --- Model definition ---
 class RHS(eqx.Module):
