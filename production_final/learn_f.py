@@ -76,11 +76,11 @@ rho_input = log_rho_all[:, :-1]
 z_input = jnp.broadcast_to(z_grid[:-1][None, :], H_input.shape)
 
 N = P_input.shape[0] * P_input.shape[1]
-X_P = P_input.reshape(N, 262)
+X_P = P_input.reshape(N, k_shape)
 X_H = H_input.reshape(N, 1)
 X_rho = rho_input.reshape(N, 1)
 X_z = z_input.reshape(N, 1)
-y = dlogpk_dz.reshape(N, 262)
+y = dlogpk_dz.reshape(N, k_shape)
 
 # --- Split data ---
 split_idx = int(0.9 * N)
