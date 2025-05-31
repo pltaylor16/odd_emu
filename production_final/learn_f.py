@@ -16,11 +16,13 @@ save_path = "/srv/scratch2/taylor.4264/odd_emu/production_models_final"
 parent_dir = "/srv/scratch2/taylor.4264/odd_emu/production_run_final/merged/"
 os.makedirs(save_path, exist_ok=True)
 
+k_shape = 182
+
 # --- Model definition ---
 class RHS(eqx.Module):
     mlp: eqx.nn.MLP
     def __init__(self, key):
-        self.mlp = eqx.nn.MLP(in_size=265, out_size=262, width_size=512, depth=4, key=key)
+        self.mlp = eqx.nn.MLP(in_size=265, out_size=k_shape, width_size=512, depth=4, key=key)
 
     def __call__(self, P, H, rho, z):
         x = jnp.concatenate([P, H, rho, z])
