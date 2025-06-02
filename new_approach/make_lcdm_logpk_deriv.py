@@ -79,7 +79,7 @@ Hz_all = np.zeros(len(z_chunk), dtype=np.float32)
 rho_m_all = np.zeros(len(z_chunk), dtype=np.float32)
 
 # --- Loop over redshift ---
-dz = 0.0005  # pick a reasonable step, not too small
+dz = 0.00005  # pick a reasonable step, not too small
 
 for i, z in enumerate(z_chunk):
     z_vals = {
