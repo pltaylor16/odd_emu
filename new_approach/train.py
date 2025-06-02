@@ -1,11 +1,17 @@
-import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # Use GPU 0
+# train_model.py
 
+import os
+import sys
 import jax
 import jax.numpy as jnp
 import numpy as np
 import equinox as eqx
 import optax
+
+# --- Parse arguments ---
+run_idx = int(sys.argv[1])
+gpu_id = sys.argv[2]
+os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
 
 # --- Load Data ---
 parent_dir = '/srv/scratch3/taylor.4264/odd_emu/production_run_logpk/merged/'
@@ -58,7 +64,7 @@ def loss_fn(model_params, model, X_P, X_H, X_rho, X_z, y):
         y_pred = model(p, h, r, z)
         return jnp.mean((y_pred - y_true) ** 2)
     losses = jax.vmap(single_example)(X_P, X_H, X_rho, X_z, y)
-    return jnp.mean(losses)  # ← Return scalar only
+    return jnp.mean(losses)  # scalar only
 
 @eqx.filter_jit
 def step(model_params, model, opt_state, X_P, X_H, X_rho, X_z, y):
@@ -71,59 +77,58 @@ def step(model_params, model, opt_state, X_P, X_H, X_rho, X_z, y):
 save_path = "/srv/scratch3/taylor.4264/odd_emu/models_final"
 os.makedirs(save_path, exist_ok=True)
 
-for run_idx in range(1):
-    key = jax.random.PRNGKey(run_idx + 5)
-    model = RHS(key)
-    model_params = eqx.filter(model, eqx.is_inexact_array)
-    opt = optax.adam(1e-3)
-    opt_state = opt.init(model_params)
+key = jax.random.PRNGKey(run_idx + 5)
+model = RHS(key)
+model_params = eqx.filter(model, eqx.is_inexact_array)
+opt = optax.adam(1e-3)
+opt_state = opt.init(model_params)
 
-    best_val_loss = jnp.inf
-    best_model_params = None
-    patience = 20
-    wait = 0
-    max_epochs = 1000
-    batch_size = 32
-    num_batches = split_idx // batch_size
-    rng = jax.random.PRNGKey(run_idx + 1000)
+best_val_loss = jnp.inf
+best_model_params = None
+patience = 20
+wait = 0
+max_epochs = 1000
+batch_size = 32
+num_batches = split_idx // batch_size
+rng = jax.random.PRNGKey(run_idx + 1000)
 
-    for epoch in range(max_epochs):
-        rng, subkey = jax.random.split(rng)
-        perm = jax.random.permutation(subkey, split_idx)
-        X_P_train = X_P_train[perm]
-        X_H_train = X_H_train[perm]
-        X_rho_train = X_rho_train[perm]
-        X_z_train = X_z_train[perm]
-        y_train = y_train[perm]
+for epoch in range(max_epochs):
+    rng, subkey = jax.random.split(rng)
+    perm = jax.random.permutation(subkey, split_idx)
+    X_P_train = X_P_train[perm]
+    X_H_train = X_H_train[perm]
+    X_rho_train = X_rho_train[perm]
+    X_z_train = X_z_train[perm]
+    y_train = y_train[perm]
 
-        epoch_loss = 0.0
-        for i in range(num_batches):
-            start = i * batch_size
-            end = start + batch_size
-            X_P_batch = X_P_train[start:end]
-            X_H_batch = X_H_train[start:end]
-            X_rho_batch = X_rho_train[start:end]
-            X_z_batch = X_z_train[start:end]
-            y_batch = y_train[start:end]
-            model_params, opt_state, batch_loss = step(model_params, model, opt_state, X_P_batch, X_H_batch, X_rho_batch, X_z_batch, y_batch)
-            epoch_loss += batch_loss
+    epoch_loss = 0.0
+    for i in range(num_batches):
+        start = i * batch_size
+        end = start + batch_size
+        X_P_batch = X_P_train[start:end]
+        X_H_batch = X_H_train[start:end]
+        X_rho_batch = X_rho_train[start:end]
+        X_z_batch = X_z_train[start:end]
+        y_batch = y_train[start:end]
+        model_params, opt_state, batch_loss = step(model_params, model, opt_state, X_P_batch, X_H_batch, X_rho_batch, X_z_batch, y_batch)
+        epoch_loss += batch_loss
 
-        epoch_loss /= num_batches
-        val_loss, _ = loss_fn(model_params, model, X_P_val, X_H_val, X_rho_val, X_z_val, y_val)
+    epoch_loss /= num_batches
+    val_loss, _ = loss_fn(model_params, model, X_P_val, X_H_val, X_rho_val, X_z_val, y_val)
 
-        if epoch % 10 == 0:
-            print(f"Run {run_idx}, Epoch {epoch}: Train Loss = {epoch_loss:.6e}, Val Loss = {val_loss:.6e}")
+    if epoch % 10 == 0:
+        print(f"Run {run_idx}, Epoch {epoch}: Train Loss = {epoch_loss:.6e}, Val Loss = {val_loss:.6e}")
 
-        if val_loss < best_val_loss - 1e-6:
-            best_val_loss = val_loss
-            best_model_params = model_params
-            wait = 0
-        else:
-            wait += 1
-            if wait >= patience:
-                print(f"Early stopping run {run_idx} at epoch {epoch}. Best Val Loss = {best_val_loss:.6e}")
-                break
+    if val_loss < best_val_loss - 1e-6:
+        best_val_loss = val_loss
+        best_model_params = model_params
+        wait = 0
+    else:
+        wait += 1
+        if wait >= patience:
+            print(f"Early stopping run {run_idx} at epoch {epoch}. Best Val Loss = {best_val_loss:.6e}")
+            break
 
-    model_file = os.path.join(save_path, f"learned_model_logpk_{run_idx}.eqx")
-    eqx.tree_serialise_leaves(model_file, best_model_params)
-    print(f"Run {run_idx}: Saved best model to {model_file}")
+model_file = os.path.join(save_path, f"learned_model_logpk_{run_idx}.eqx")
+eqx.tree_serialise_leaves(model_file, best_model_params)
+print(f"Run {run_idx}: Saved best model to {model_file}")
