@@ -14,7 +14,7 @@ gpu_id = sys.argv[2]
 os.environ["CUDA_VISIBLE_DEVICES"] = gpu_id
 
 # --- Load Data ---
-parent_dir = '/srv/scratch3/taylor.4264/odd_emu/production_run_logpk/merged_master/'
+parent_dir = '/srv/scratch3/taylor.4264/odd_emu/production_run_logpk/merged/'
 logpk = jnp.load(parent_dir + "logpk.npy")          # shape (n_samples, n_k)
 logpk_dz = jnp.load(parent_dir + "logpk_dz.npy")    # shape (n_samples, n_k)
 Hz = jnp.load(parent_dir + "Hz.npy")                # shape (n_samples,)
@@ -88,7 +88,7 @@ best_model_params = None
 patience = 20
 wait = 0
 max_epochs = 1000
-batch_size = 512
+batch_size = 64
 num_batches = split_idx // batch_size
 rng = jax.random.PRNGKey(run_idx + 1000)
 

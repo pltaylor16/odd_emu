@@ -23,7 +23,7 @@ os.makedirs(save_dir, exist_ok=True)
 # --- Emulator and grid setup ---
 emulator = CPJ(probe='mpk_lin')
 k_full = emulator.modes.astype(np.float32)
-k_idx = np.where((k_full > 1e-1) & (k_full < 4.9))[0]
+k_idx = np.where((k_full > 1e-2) & (k_full < 4.9))[0]
 k = k_full[k_idx]
 nk = len(k)
 
@@ -90,7 +90,7 @@ for i, z in enumerate(z_chunk):
         inp = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, zz], dtype=np.float32)
         pk_lin = emulator.predict(inp)[k_idx]
         _, boost = ee2.get_boost(cosmo_par, np.array([zz]), k)
-        return pk_lin * boost[0]
+        return pk_lin #* boost[0]
 
     pk_minus = get_pk_nl(z_minus)
     pk_plus = get_pk_nl(z_plus)
