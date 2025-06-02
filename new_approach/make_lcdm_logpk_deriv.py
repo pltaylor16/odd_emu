@@ -79,16 +79,12 @@ Hz_all = np.zeros(len(z_chunk), dtype=np.float32)
 rho_m_all = np.zeros(len(z_chunk), dtype=np.float32)
 
 # --- Loop over redshift ---
-dz = 0.00005  # pick a reasonable step, not too small
+dz = 0.0001  # central step size
 
 for i, z in enumerate(z_chunk):
-    z_vals = {
-        "zm2": max(z - 2 * dz, 0.001),
-        "zm1": max(z - dz, 0.001),
-        "zp1": z + dz,
-        "zp2": z + 2 * dz,
-        "zc": z
-    }
+    z_minus = max(z - dz, 0.001)
+    z_plus = z + dz
+    z_cen = z
 
     def get_pk_nl(zz):
         inp = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, zz], dtype=np.float32)
@@ -96,13 +92,12 @@ for i, z in enumerate(z_chunk):
         _, boost = ee2.get_boost(cosmo_par, np.array([zz]), k)
         return pk_lin * boost[0]
 
-    pk_m2 = get_pk_nl(z_vals["zm2"])
-    pk_m1 = get_pk_nl(z_vals["zm1"])
-    pk_p1 = get_pk_nl(z_vals["zp1"])
-    pk_p2 = get_pk_nl(z_vals["zp2"])
-    pk_cen = get_pk_nl(z_vals["zc"])
+    pk_minus = get_pk_nl(z_minus)
+    pk_plus = get_pk_nl(z_plus)
+    pk_cen = get_pk_nl(z_cen)
 
-    logpk_dz_all[i] = (-np.log(pk_p2) + 8 * np.log(pk_p1) - 8 * np.log(pk_m1) + np.log(pk_m2)) / (12 * dz)
+    # Two-sided central difference for dlogP/dz
+    logpk_dz_all[i] = (np.log(pk_plus) - np.log(pk_minus)) / (2 * dz)
     logpk_all[i] = np.log(pk_cen)
 
     # Background quantities
