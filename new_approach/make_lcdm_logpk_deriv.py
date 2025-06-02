@@ -23,7 +23,7 @@ os.makedirs(save_dir, exist_ok=True)
 # --- Emulator and grid setup ---
 emulator = CPJ(probe='mpk_lin')
 k_full = emulator.modes.astype(np.float32)
-k_idx = np.where((k_full > 1e-2) & (k_full < 4.9))[0]
+k_idx = np.where((k_full > 1e-1) & (k_full < 4.9))[0]
 k = k_full[k_idx]
 nk = len(k)
 
@@ -79,36 +79,37 @@ Hz_all = np.zeros(len(z_chunk), dtype=np.float32)
 rho_m_all = np.zeros(len(z_chunk), dtype=np.float32)
 
 # --- Loop over redshift ---
-dz = 0.0001
+dz = 0.0005  # pick a reasonable step, not too small
+
 for i, z in enumerate(z_chunk):
-    z_minus = max(z - dz, 0.001)
-    z_plus = z + dz
-    z_cen = z
+    z_vals = {
+        "zm2": max(z - 2 * dz, 0.001),
+        "zm1": max(z - dz, 0.001),
+        "zp1": z + dz,
+        "zp2": z + 2 * dz,
+        "zc": z
+    }
 
-    inp_minus = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, z_minus], dtype=np.float32)
-    inp_plus  = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, z_plus], dtype=np.float32)
-    inp_cen   = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, z_cen], dtype=np.float32)
+    def get_pk_nl(zz):
+        inp = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, zz], dtype=np.float32)
+        pk_lin = emulator.predict(inp)[k_idx]
+        _, boost = ee2.get_boost(cosmo_par, np.array([zz]), k)
+        return pk_lin * boost[0]
 
-    pk_lin_minus = emulator.predict(inp_minus)[k_idx]
-    pk_lin_plus  = emulator.predict(inp_plus)[k_idx]
-    pk_lin_cen   = emulator.predict(inp_cen)[k_idx]
+    pk_m2 = get_pk_nl(z_vals["zm2"])
+    pk_m1 = get_pk_nl(z_vals["zm1"])
+    pk_p1 = get_pk_nl(z_vals["zp1"])
+    pk_p2 = get_pk_nl(z_vals["zp2"])
+    pk_cen = get_pk_nl(z_vals["zc"])
 
-    _, boost_minus = ee2.get_boost(cosmo_par, np.array([z_minus]), k)
-    _, boost_plus  = ee2.get_boost(cosmo_par, np.array([z_plus]), k)
-    _, boost_cen   = ee2.get_boost(cosmo_par, np.array([z_cen]), k)
+    logpk_dz_all[i] = (-np.log(pk_p2) + 8 * np.log(pk_p1) - 8 * np.log(pk_m1) + np.log(pk_m2)) / (12 * dz)
+    logpk_all[i] = np.log(pk_cen)
 
-    pk_nl_minus = pk_lin_minus * boost_minus[0]
-    pk_nl_plus  = pk_lin_plus * boost_plus[0]
-    pk_nl_cen   = pk_lin_cen * boost_cen[0]
-
-    logpk_dz_all[i] = (np.log(pk_nl_plus) - np.log(pk_nl_minus)) / (2 * dz)
-    logpk_all[i] = np.log(pk_nl_cen)
-
+    # Background quantities
     a = 1.0 / (1.0 + z)
     Ez_sq = Omm * (1 + z)**3 + (1 - Omm) * a**(-3 * (1 + (-1.0)))
     Hz = 100.0 * h * np.sqrt(Ez_sq)
     rho_crit = 3 * Hz**2 / (8 * np.pi * G)
-
     Hz_all[i] = Hz
     rho_m_all[i] = Omm * rho_crit
 

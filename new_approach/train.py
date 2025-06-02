@@ -14,6 +14,7 @@ logpk_dz = jnp.load(parent_dir + "logpk_dz.npy")    # shape (n_samples, n_k)
 Hz = jnp.load(parent_dir + "Hz.npy")                # shape (n_samples,)
 rho_m = jnp.load(parent_dir + "rho_m.npy")          # shape (n_samples,)
 z = jnp.load(parent_dir + "z.npy")                  # shape (n_samples,)
+k = jnp.load(parent_dir + "k.npy")                  # shape (n_k,)
 
 # --- Normalize H and rho ---
 H_mean, H_std = jnp.mean(Hz), jnp.std(Hz)
@@ -38,12 +39,13 @@ X_H_train, X_H_val = X_H[:split_idx], X_H[split_idx:]
 X_rho_train, X_rho_val = X_rho[:split_idx], X_rho[split_idx:]
 X_z_train, X_z_val = X_z[:split_idx], X_z[split_idx:]
 y_train, y_val = y[:split_idx], y[split_idx:]
+k_shp = jnp.shape(k)[0]
 
 # --- Neural network model ---
 class RHS(eqx.Module):
     mlp: eqx.nn.MLP
     def __init__(self, key):
-        self.mlp = eqx.nn.MLP(in_size=265, out_size=262, width_size=512, depth=4, key=key)
+        self.mlp = eqx.nn.MLP(in_size=k_shp + 3, out_size=k_shp, width_size=512, depth=4, key=key)
 
     def __call__(self, P, H, rho, z):
         x = jnp.concatenate([P, H, rho, z])
