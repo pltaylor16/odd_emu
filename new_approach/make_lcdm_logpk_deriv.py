@@ -90,7 +90,7 @@ for i, z in enumerate(z_chunk):
         inp = np.array([omega_b, omega_cdm, h, ns, ln_10_A_s, zz], dtype=np.float32)
         pk_lin = emulator.predict(inp)[k_idx]
         _, boost = ee2.get_boost(cosmo_par, np.array([zz]), k)
-        return pk_lin #* boost[0]
+        return pk_lin * boost[0]
 
     pk_minus = get_pk_nl(z_minus)
     pk_plus = get_pk_nl(z_plus)
