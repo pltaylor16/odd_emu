@@ -62,7 +62,7 @@ ln_10_A_s = np.log(1e10 * As)
 G = 4.30091e-9  # Mpc⋅Msun⁻¹⋅(km/s)²
 
 # --- Redshift slice for this job ---
-z_full = np.linspace(0.01, 5.0, 5000).astype(np.float32)
+z_full = np.linspace(0.01, 5.0, 20000).astype(np.float32)
 z_chunks = np.array_split(z_full, n_jobs)
 z_all = z_chunks[job_idx]
 nz = len(z_all)
