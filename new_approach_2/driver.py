@@ -4,7 +4,7 @@ import os
 import subprocess
 
 # --- Settings ---
-n_jobs = 100
+n_jobs = 500
 n_procs_per_job = 30
 n_total_samples = 30000
 samples_per_rank = n_total_samples // (n_jobs * n_procs_per_job)
