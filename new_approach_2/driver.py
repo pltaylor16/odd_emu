@@ -5,9 +5,9 @@ import subprocess
 
 
 # --- Settings ---
-n_jobs = 500
+n_jobs = 2000
 n_procs_per_job = 30
-n_total_samples = 30000
+n_total_samples = 120000
 samples_per_rank = n_total_samples // (n_jobs * n_procs_per_job)
 base_output_dir = "/srv/scratch3/taylor.4264/odd_emu/production_run_logpk"
 
