@@ -19,6 +19,7 @@ k = k_emulator[k_idx]
 k_shape = k.shape[0]
 
 
+
 start = rank * n_local
 end = (rank + 1) * n_local
 
