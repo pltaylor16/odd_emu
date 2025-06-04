@@ -2,7 +2,7 @@
 
 import subprocess
 
-num_models = 2
+num_models = 6
 for i in range(0, num_models, 2):
     procs = []
     for j, gpu_id in zip(range(i, i + 2), ["0", "1"]):
