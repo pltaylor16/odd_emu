@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 from cosmopower_jax.cosmopower_jax import CosmoPowerJAX
 import euclidemu2 as ee2
+from mpi4py import MPI
 
 # --- Constants ---
 G = 4.30091e-9  # Mpc Msun^-1 (km/s)^2
@@ -13,11 +14,16 @@ z_min, z_max, nz = 0.01, 5.0, 20
 z_array = np.linspace(z_min, z_max, nz)
 dz = 0.0001
 
-# --- Args ---
+
+# --- MPI setup ---
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+# --- Parse command-line args ---
+import sys
 output_dir = sys.argv[1]
-rank = int(sys.argv[2])
-n_ranks = int(sys.argv[3])
-n_local = int(sys.argv[4])
+n_local = int(sys.argv[2])
 
 # --- Emulator and k setup ---
 emulator = CosmoPowerJAX(probe="mpk_lin")
