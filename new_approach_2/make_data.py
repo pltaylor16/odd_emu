@@ -14,16 +14,16 @@ z_min, z_max, nz = 0.01, 5.0, 20
 z_array = np.linspace(z_min, z_max, nz)
 dz = 0.0001
 
-
 # --- MPI setup ---
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
 size = comm.Get_size()
 
 # --- Parse command-line args ---
-import sys
 output_dir = sys.argv[1]
-n_local = int(sys.argv[2])
+# sys.argv[2] is the job index, ignored here
+# sys.argv[3] is total number of ranks
+n_local = int(sys.argv[4])  # ✅ Correctly assign number of samples to generate
 
 # --- Emulator and k setup ---
 emulator = CosmoPowerJAX(probe="mpk_lin")
