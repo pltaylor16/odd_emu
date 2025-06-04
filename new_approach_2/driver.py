@@ -18,3 +18,6 @@ for i in range(n_jobs):
     cmd = f"mpirun -n {n_procs_per_job} python make_data.py {run_dir} {i} {n_jobs * n_procs_per_job} {samples_per_rank}"
     print(f"Launching: {cmd}")
     subprocess.run(cmd, shell=True)
+
+
+    
