@@ -5,7 +5,7 @@ import os
 
 # --- Constants ---
 G = 4.30091e-9  # Mpc Msun^-1 (km/s)^2
-H0 = 100.0  # km/s/Mpc
+
 
 # --- Paths ---
 data_path = "/srv/scratch3/taylor.4264/odd_emu/production_run_logpk/merged/logpk_data.npz"
@@ -26,7 +26,8 @@ rho_m = np.zeros((n_samples, nz), dtype=np.float32)
 
 for i in range(n_samples):
     Omega_m = cosmo[i, 3]  # Assuming order: [As, ns, Omb, Omm, h]
-    rho_crit_0 = 3 * H0**2 / (8 * np.pi * G)
+    h = cosmo[i, 4]
+    rho_crit_0 = 3 * (100.*h)**2 / (8 * np.pi * G)
     rho_m[i] = Omega_m * rho_crit_0 * (1 + z)**3
 
 # --- Save corrected file ---
