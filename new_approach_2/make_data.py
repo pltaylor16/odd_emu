@@ -102,3 +102,6 @@ np.savez_compressed(
 )
 
 print(f"Finished rank {rank}, saved {n_local} samples to {output_dir}")
+
+
+
